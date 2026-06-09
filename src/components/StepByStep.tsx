@@ -21,7 +21,7 @@ interface StepByStepProps {
  * - Se muestran las multiplicaciones intermedias con colores
  */
 export default function StepByStep({ resultado }: StepByStepProps) {
-  const { A, L, U, y, x, pasosLU, pasosY, pasosX } = resultado;
+  const { A, b, L, U, y, x, pasosLU, pasosY, pasosX } = resultado;
   const n = A.length;
 
   const [pasoActual, setPasoActual] = useState(0);
@@ -279,56 +279,159 @@ export default function StepByStep({ resultado }: StepByStepProps) {
   const renderPasoY = () => {
     const p = pasosY[pasoActual - pasosLU.length];
     return (
-      <div className="space-y-3 bg-muted/30 rounded-lg p-3">
-        <p className="text-sm">
-          <span className="font-bold text-base">Paso {pasoActual + 1}:</span>{" "}
-          calcular{" "}
-          <span className="font-bold text-emerald-600 dark:text-emerald-400">
-            y<sub>{p.fila + 1}</sub>
-          </span>{" "}
-          (sustitución hacia adelante)
-        </p>
+      <div className="space-y-4">
+        <div className="bg-muted/30 rounded-lg p-3 space-y-3">
+          <p className="text-sm">
+            <span className="font-bold text-base">Paso {pasoActual + 1}:</span>{" "}
+            calcular{" "}
+            <span className="font-bold text-emerald-600 dark:text-emerald-400">
+              y<sub>{p.fila + 1}</sub>
+            </span>{" "}
+            — sustitución hacia adelante (de arriba hacia abajo)
+          </p>
 
-        <div className="font-mono text-sm bg-white dark:bg-gray-900 p-2 rounded border">
-          y<sub>{p.fila + 1}</sub> = (b<sub>{p.fila + 1}</sub> − (
-          {p.terminos.length === 0 ? (
-            <span className="text-gray-400">0</span>
-          ) : (
-            p.terminos.map((t, idx) => (
-              <span key={idx}>
-                {idx > 0 && " + "}
-                <span className="text-orange-500 font-semibold">{rd(t.valL)}</span>
-                {"×"}
-                <span className="text-green-500 font-semibold">{rd(t.valY)}</span>
-              </span>
-            ))
-          )}
-          )) ÷ <span className="text-purple-500 font-bold">{rd(p.pivote)}</span>
-        </div>
-        <p className="text-base font-mono">
-          = ({rd(p.valorB)} − {rd(p.suma)}) ÷ {rd(p.pivote)} ={" "}
-          <span className="text-emerald-600 font-bold text-xl">{rd(p.resultado)}</span>
-        </p>
-        <p className="text-xs text-muted-foreground italic">
-          {p.terminos.length === 0
-            ? "Primer valor de y: se divide b₁ entre el pivote L[1][1]."
-            : `Se multiplica la fila ${p.fila + 1} de L por los valores de y ya conocidos, se resta de b, y se divide.`}
-        </p>
+          <div className="font-mono text-sm bg-white dark:bg-gray-900 p-2 rounded border">
+            y<sub>{p.fila + 1}</sub> = (b<sub>{p.fila + 1}</sub> − (
+            {p.terminos.length === 0 ? (
+              <span className="text-gray-400">0</span>
+            ) : (
+              p.terminos.map((t, idx) => (
+                <span key={idx}>
+                  {idx > 0 && " + "}
+                  <span className="text-orange-500 font-semibold">{rd(t.valL)}</span>
+                  {"×"}
+                  <span className="text-green-500 font-semibold">{rd(t.valY)}</span>
+                </span>
+              ))
+            )}
+            )) ÷ <span className="text-purple-500 font-bold">{rd(p.pivote)}</span>
+          </div>
 
-        {/* Vector y parcial */}
-        <div className="flex gap-2 items-center text-sm">
-          <span className="text-muted-foreground">y = [</span>
-          {y.map((v, i) => (
-            <span
-              key={i}
-              className={`font-mono ${i === p.fila ? "text-emerald-600 font-bold text-base" : i < p.fila ? "text-green-600" : "text-gray-400"}`}
-            >
-              {i <= p.fila ? rd(v) : "?"}
-              {i < n - 1 && ","}
-            </span>
-          ))}
-          <span className="text-muted-foreground">]</span>
+          <p className="text-base font-mono">
+            = ({rd(p.valorB)} − {rd(p.suma)}) ÷ {rd(p.pivote)} ={" "}
+            <span className="text-emerald-600 font-bold text-xl">{rd(p.resultado)}</span>
+          </p>
+
+          {/* Explicación detallada */}
+          <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded p-3 space-y-2 text-sm">
+            <p className="font-semibold text-amber-800 dark:text-amber-300">¿De dónde sale cada número?</p>
+            <p><span className="font-medium">b[{p.fila + 1}] = {rd(p.valorB)}</span> — valor del vector b en la fila {p.fila + 1}.</p>
+            {p.terminos.length === 0 ? (
+              <p><span className="font-medium">Suma = 0</span> — primer y, no hay valores previos de y para restar.</p>
+            ) : (
+              <div>
+                <p className="font-medium">
+                  Suma = {p.terminos.map((t, idx) => (
+                    <span key={idx}>{idx > 0 && " + "}<span className="text-orange-600 font-semibold">{rd(t.valL)}</span>×<span className="text-green-600 font-semibold">{rd(t.valY)}</span></span>
+                  ))} = {rd(p.suma)}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Se multiplica la fila {p.fila + 1} de L (naranja) por los valores de y ya conocidos (verde).
+                </p>
+              </div>
+            )}
+            <p><span className="font-medium">Se divide entre L[{p.fila + 1}][{p.fila + 1}] = {rd(p.pivote)}</span> — pivote de la diagonal de L.</p>
+          </div>
         </div>
+
+        {/* ─── Matrices visuales: L y vector b ─── */}
+        <div className="flex flex-wrap gap-6 justify-center items-start">
+          <MatrizVisual
+            datos={L}
+            label="L"
+            resaltarFilas={[p.fila]}
+            mostrarVacios={false}
+          />
+          <div className="flex flex-col items-center gap-1 pt-8">
+            <span className="text-2xl font-bold text-muted-foreground">×</span>
+          </div>
+          <div className="flex flex-col items-center gap-1">
+            <span className="text-xs font-bold text-muted-foreground">y</span>
+            <div className="flex flex-col">
+              {y.map((v, i) => (
+                <div
+                  key={i}
+                  className={`w-16 h-10 flex items-center justify-center font-mono text-sm border transition-colors ${
+                    i === p.fila
+                      ? "bg-emerald-400 dark:bg-emerald-600 font-bold ring-2 ring-emerald-500"
+                      : i < p.fila
+                        ? "bg-green-50 dark:bg-green-900/20 border-gray-300"
+                        : "bg-gray-100 dark:bg-gray-800/30 text-gray-300"
+                  }`}
+                >
+                  {i < p.fila ? rd(v) : i === p.fila ? rd(p.resultado) : "···"}
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="flex flex-col items-center gap-1 pt-8">
+            <span className="text-2xl font-bold text-muted-foreground">=</span>
+          </div>
+          <div className="flex flex-col items-center gap-1">
+            <span className="text-xs font-bold text-muted-foreground">b</span>
+            <div className="flex flex-col">
+              {b.map((v, i) => (
+                <div
+                  key={i}
+                  className={`w-16 h-10 flex items-center justify-center font-mono text-sm border ${
+                    i === p.fila ? "bg-yellow-100 dark:bg-yellow-900/40 font-bold border-yellow-400" : "bg-gray-50 dark:bg-gray-800/30 border-gray-300"
+                  }`}
+                >
+                  {v}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Leyenda */}
+        <div className="flex flex-wrap gap-3 text-xs text-muted-foreground justify-center">
+          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-orange-100 dark:bg-orange-900/40 border border-orange-300 inline-block" /> Fila L activa</span>
+          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-emerald-400 dark:bg-emerald-600 ring-1 ring-emerald-500 inline-block" /> Calculando ahora</span>
+          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-green-50 dark:bg-green-900/20 border border-green-200 inline-block" /> Ya calculado</span>
+          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-gray-100 dark:bg-gray-800/30 inline-block text-gray-300">···</span> Falta calcular</span>
+        </div>
+
+        {/* ─── Contexto: matrices ya calculadas ─── */}
+        <details className="text-xs" open>
+          <summary className="cursor-pointer text-muted-foreground hover:text-foreground font-medium py-1">
+            📋 Ver todas las matrices (L, U, x, y)
+          </summary>
+          <div className="flex flex-wrap gap-3 justify-center items-start mt-2 pt-2 border-t border-gray-200 dark:border-gray-700 opacity-80">
+            <MatrizVisual datos={L} label="L (paso 1)" mostrarVacios={false} />
+            <MatrizVisual datos={U} label="U (paso 1)" esU mostrarVacios={false} />
+            <div className="flex flex-col items-center gap-1">
+              <span className="text-xs font-bold text-muted-foreground">y</span>
+              <div className="flex flex-col">
+                {y.map((v, i) => (
+                  <div key={i} className="w-14 h-9 flex items-center justify-center font-mono text-xs border border-gray-300 bg-gray-50 dark:bg-gray-800/30">
+                    {rd(v)}
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="flex flex-col items-center gap-1">
+              <span className="text-xs font-bold text-muted-foreground">x</span>
+              <div className="flex flex-col">
+                {x.map((v, i) => (
+                  <div key={i} className={`w-14 h-9 flex items-center justify-center font-mono text-xs border ${x[i] !== 0 ? 'bg-green-50 dark:bg-green-900/20 border-gray-300' : 'bg-gray-100 dark:bg-gray-800/30 text-gray-300'}`}>
+                    {x[i] !== 0 ? rd(v) : '···'}
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="flex flex-col items-center gap-1">
+              <span className="text-xs font-bold text-muted-foreground">b</span>
+              <div className="flex flex-col">
+                {b.map((v, i) => (
+                  <div key={i} className="w-14 h-9 flex items-center justify-center font-mono text-xs border border-gray-300 bg-gray-50 dark:bg-gray-800/30">
+                    {v}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </details>
       </div>
     );
   };
@@ -337,56 +440,187 @@ export default function StepByStep({ resultado }: StepByStepProps) {
   const renderPasoX = () => {
     const p = pasosX[pasoActual - pasosLU.length - pasosY.length];
     return (
-      <div className="space-y-3 bg-muted/30 rounded-lg p-3">
-        <p className="text-sm">
-          <span className="font-bold text-base">Paso {pasoActual + 1}:</span>{" "}
-          calcular{" "}
-          <span className="font-bold text-emerald-600 dark:text-emerald-400">
-            x<sub>{p.fila + 1}</sub>
-          </span>{" "}
-          (sustitución hacia atrás, de abajo hacia arriba)
-        </p>
+      <div className="space-y-4">
+        <div className="bg-muted/30 rounded-lg p-3 space-y-3">
+          <p className="text-sm">
+            <span className="font-bold text-base">Paso {pasoActual + 1}:</span>{" "}
+            calcular{" "}
+            <span className="font-bold text-emerald-600 dark:text-emerald-400">
+              x<sub>{p.fila + 1}</sub>
+            </span>{" "}
+            — sustitución hacia atrás (de abajo hacia arriba)
+          </p>
 
-        <div className="font-mono text-sm bg-white dark:bg-gray-900 p-2 rounded border">
-          x<sub>{p.fila + 1}</sub> = y<sub>{p.fila + 1}</sub> − (
-          {p.terminos.length === 0 ? (
-            <span className="text-gray-400">0</span>
-          ) : (
-            p.terminos.map((t, idx) => (
-              <span key={idx}>
-                {idx > 0 && " + "}
-                <span className="text-blue-500 font-semibold">{rd(t.valU)}</span>
-                {"×"}
-                <span className="text-green-500 font-semibold">{rd(t.valX)}</span>
-              </span>
-            ))
-          )}
-          )
-        </div>
-        <p className="text-base font-mono">
-          = {rd(p.valorY)} − {rd(p.suma)} ={" "}
-          <span className="text-emerald-600 font-bold text-xl">{rd(p.resultado)}</span>
-        </p>
-        <p className="text-xs text-muted-foreground italic">
-          {p.terminos.length === 0
-            ? "Último valor de x: es igual a y (porque U tiene 1 en la diagonal)."
-            : `Se multiplica la fila ${p.fila + 1} de U por los valores de x ya conocidos, y se resta de y.`}
-        </p>
+          <div className="font-mono text-sm bg-white dark:bg-gray-900 p-2 rounded border">
+            x<sub>{p.fila + 1}</sub> = y<sub>{p.fila + 1}</sub> − (
+            {p.terminos.length === 0 ? (
+              <span className="text-gray-400">0</span>
+            ) : (
+              p.terminos.map((t, idx) => (
+                <span key={idx}>
+                  {idx > 0 && " + "}
+                  <span className="text-blue-500 font-semibold">{rd(t.valU)}</span>
+                  {"×"}
+                  <span className="text-green-500 font-semibold">{rd(t.valX)}</span>
+                </span>
+              ))
+            )}
+            )
+            <span className="text-xs text-muted-foreground ml-2">(U tiene 1 en diagonal, no se divide)</span>
+          </div>
 
-        {/* Vector x parcial */}
-        <div className="flex gap-2 items-center text-sm">
-          <span className="text-muted-foreground">x = [</span>
-          {x.map((v, i) => (
-            <span
-              key={i}
-              className={`font-mono ${i === p.fila ? "text-emerald-600 font-bold text-base" : x[i] !== 0 ? "text-green-600" : "text-gray-400"}`}
-            >
-              {x[i] !== 0 || i >= p.fila ? rd(v) : "?"}
-              {i < n - 1 && ","}
-            </span>
-          ))}
-          <span className="text-muted-foreground">]</span>
+          <p className="text-base font-mono">
+            = {rd(p.valorY)} − {rd(p.suma)} ={" "}
+            <span className="text-emerald-600 font-bold text-xl">{rd(p.resultado)}</span>
+          </p>
+
+          {/* Explicación detallada */}
+          <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded p-3 space-y-2 text-sm">
+            <p className="font-semibold text-amber-800 dark:text-amber-300">¿De dónde sale cada número?</p>
+            <p><span className="font-medium">y[{p.fila + 1}] = {rd(p.valorY)}</span> — valor del vector y en la fila {p.fila + 1} (calculado en el paso 2).</p>
+            {p.terminos.length === 0 ? (
+              <p><span className="font-medium">Suma = 0</span> — última x (x<sub>{n}</sub>), no hay columnas a la derecha en U.</p>
+            ) : (
+              <div className="space-y-1">
+                <p className="font-medium">
+                  Suma = {p.terminos.map((t, idx) => (
+                    <span key={idx}>{idx > 0 && " + "}<span className="text-blue-600 font-semibold">{rd(t.valU)}</span>×<span className="text-green-600 font-semibold">{rd(t.valX)}</span></span>
+                  ))} = {rd(p.suma)}
+                </p>
+                {/* Explicar de dónde salen los x usados */}
+                <div className="space-y-0.5 mt-1">
+                  <p className="text-xs text-muted-foreground font-medium">De dónde salen los valores de x usados:</p>
+                  {p.terminos.map((t, idx) => {
+                    // Encontrar qué x es (columna correspondiente)
+                    const colX = p.fila + 1 + idx + 1; // U[fila][col], x[col]
+                    return (
+                      <p key={idx} className="text-xs ml-2">
+                        → <span className="text-green-600 font-semibold">x<sub>{colX}</sub> = {rd(t.valX)}</span> — calculado en el paso {pasosLU.length + pasosY.length + (n - colX)} (sustitución hacia atrás, desde abajo)
+                      </p>
+                    );
+                  })}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Se multiplica la fila {p.fila + 1} de U (azul) por los valores de x ya conocidos (verde).
+                </p>
+              </div>
+            )}
+            <p><span className="font-medium">No se divide.</span> — En U la diagonal es 1, así que x = y − suma directamente.</p>
+          </div>
         </div>
+
+        {/* ─── Matrices visuales: U y vector y ─── */}
+        <div className="flex flex-wrap gap-6 justify-center items-start">
+          <MatrizVisual
+            datos={U}
+            label="U"
+            resaltarFilas={[p.fila]}
+            mostrarVacios={false}
+            esU
+          />
+          <div className="flex flex-col items-center gap-1 pt-8">
+            <span className="text-2xl font-bold text-muted-foreground">×</span>
+          </div>
+          <div className="flex flex-col items-center gap-1">
+            <span className="text-xs font-bold text-muted-foreground">x</span>
+            <div className="flex flex-col">
+              {x.map((v, i) => {
+                // Sustitución hacia atrás: de abajo hacia arriba
+                // i > p.fila → ya calculado (verde claro)
+                // i === p.fila → calculando ahora (verde fuerte)
+                // i < p.fila → falta calcular (gris ···)
+                const yaCalculado = i > p.fila;
+                const ahora = i === p.fila;
+                const falta = i < p.fila;
+                return (
+                  <div
+                    key={i}
+                    className={`w-16 h-10 flex items-center justify-center font-mono text-sm border transition-colors ${
+                      ahora
+                        ? "bg-emerald-400 dark:bg-emerald-600 font-bold ring-2 ring-emerald-500"
+                        : yaCalculado
+                          ? "bg-green-50 dark:bg-green-900/20 border-gray-300"
+                          : "bg-gray-100 dark:bg-gray-800/30 text-gray-300"
+                    }`}
+                  >
+                    {ahora
+                      ? rd(p.resultado)
+                      : yaCalculado
+                        ? rd(v)
+                        : "···"}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          <div className="flex flex-col items-center gap-1 pt-8">
+            <span className="text-2xl font-bold text-muted-foreground">=</span>
+          </div>
+          <div className="flex flex-col items-center gap-1">
+            <span className="text-xs font-bold text-muted-foreground">y</span>
+            <div className="flex flex-col">
+              {y.map((v, i) => (
+                <div
+                  key={i}
+                  className={`w-16 h-10 flex items-center justify-center font-mono text-sm border ${
+                    i === p.fila ? "bg-yellow-100 dark:bg-yellow-900/40 font-bold border-yellow-400" : "bg-gray-50 dark:bg-gray-800/30 border-gray-300"
+                  }`}
+                >
+                  {rd(v)}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Leyenda */}
+        <div className="flex flex-wrap gap-3 text-xs text-muted-foreground justify-center">
+          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-orange-100 dark:bg-orange-900/40 border border-orange-300 inline-block" /> Fila U activa</span>
+          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-emerald-400 dark:bg-emerald-600 ring-1 ring-emerald-500 inline-block" /> Calculando ahora</span>
+          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-green-50 dark:bg-green-900/20 border border-green-200 inline-block" /> Ya calculado</span>
+          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-gray-100 dark:bg-gray-800/30 inline-block text-gray-300">···</span> Falta calcular</span>
+        </div>
+
+        {/* ─── Contexto: matrices ya calculadas ─── */}
+        <details className="text-xs" open>
+          <summary className="cursor-pointer text-muted-foreground hover:text-foreground font-medium py-1">
+            📋 Ver todas las matrices (L, U, x, y)
+          </summary>
+          <div className="flex flex-wrap gap-3 justify-center items-start mt-2 pt-2 border-t border-gray-200 dark:border-gray-700 opacity-80">
+            <MatrizVisual datos={L} label="L (paso 1)" mostrarVacios={false} />
+            <MatrizVisual datos={U} label="U (paso 1)" esU mostrarVacios={false} />
+            <div className="flex flex-col items-center gap-1">
+              <span className="text-xs font-bold text-muted-foreground">y</span>
+              <div className="flex flex-col">
+                {y.map((v, i) => (
+                  <div key={i} className="w-14 h-9 flex items-center justify-center font-mono text-xs border border-gray-300 bg-gray-50 dark:bg-gray-800/30">
+                    {rd(v)}
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="flex flex-col items-center gap-1">
+              <span className="text-xs font-bold text-muted-foreground">x</span>
+              <div className="flex flex-col">
+                {x.map((v, i) => (
+                  <div key={i} className={`w-14 h-9 flex items-center justify-center font-mono text-xs border ${x[i] !== 0 ? 'bg-green-50 dark:bg-green-900/20 border-gray-300' : 'bg-gray-100 dark:bg-gray-800/30 text-gray-300'}`}>
+                    {x[i] !== 0 ? rd(v) : '···'}
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="flex flex-col items-center gap-1">
+              <span className="text-xs font-bold text-muted-foreground">b</span>
+              <div className="flex flex-col">
+                {b.map((v, i) => (
+                  <div key={i} className="w-14 h-9 flex items-center justify-center font-mono text-xs border border-gray-300 bg-gray-50 dark:bg-gray-800/30">
+                    {v}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </details>
       </div>
     );
   };
