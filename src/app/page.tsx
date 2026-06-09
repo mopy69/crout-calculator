@@ -1,65 +1,74 @@
-import Image from "next/image";
+"use client";
 
+import { useState, useCallback } from "react";
+import { crout, CroutResult } from "@/lib/crout";
+import MatrixInput from "@/components/MatrixInput";
+import StepByStep from "@/components/StepByStep";
+import { Separator } from "@/components/ui/separator";
+
+/**
+ * Página principal de la Calculadora de Descomposición de Crout.
+ *
+ * Flujo:
+ * 1. Usuario ingresa matriz A y vector b en MatrixInput
+ * 2. Al presionar "Resolver", se ejecuta el algoritmo de Crout
+ * 3. Se muestran los resultados en StepByStep (L, U, y, x + pasos)
+ */
 export default function Home() {
+  // Resultado del algoritmo (null si no se ha calculado)
+  const [resultado, setResultado] = useState<CroutResult | null>(null);
+
+  // Error capturado del algoritmo (ej: pivote cero)
+  const [errorAlgoritmo, setErrorAlgoritmo] = useState<string>("");
+
+  /**
+   * Callback que recibe A y b desde MatrixInput,
+   * ejecuta el algoritmo y guarda el resultado.
+   */
+  const handleResolver = useCallback((A: number[][], b: number[]) => {
+    try {
+      const res = crout(A, b);
+      setResultado(res);
+      setErrorAlgoritmo("");
+    } catch (err: unknown) {
+      setErrorAlgoritmo(
+        err instanceof Error ? err.message : "Error desconocido en el algoritmo."
+      );
+      setResultado(null);
+    }
+  }, []);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+    <main className="flex-1 w-full max-w-5xl mx-auto px-4 py-8 space-y-6">
+      {/* --- Encabezado --- */}
+      <div className="text-center space-y-2">
+        <h1 className="text-3xl font-bold tracking-tight">
+          Calculadora de Descomposición de Crout
+        </h1>
+        <p className="text-muted-foreground text-sm max-w-2xl mx-auto">
+          Método de factorización LU que descompone A = L·U, donde L es
+          triangular inferior y U es triangular superior unitaria (diagonal=1).
+          Resuelve sistemas de ecuaciones lineales Ax = b en 3 pasos.
+        </p>
+      </div>
+
+      <Separator />
+
+      {/* --- Entrada de matriz --- */}
+      <MatrixInput onResolver={handleResolver} errorExterno={errorAlgoritmo} />
+
+      {/* --- Resultados paso a paso --- */}
+      {resultado && (
+        <>
+          <Separator />
+          <StepByStep resultado={resultado} />
+        </>
+      )}
+
+      {/* --- Footer con créditos --- */}
+      <footer className="text-center text-xs text-muted-foreground pt-8 pb-4">
+        Descomposición de Crout — Prescott Durand Crout — Métodos Numéricos
+      </footer>
+    </main>
   );
 }
