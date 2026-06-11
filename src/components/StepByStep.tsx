@@ -63,8 +63,8 @@ export default function StepByStep({ resultado }: StepByStepProps) {
   // ─── Renderizar paso de factorización LU ───
   const renderPasoLU = () => {
     const p = pasosLU[pasoActual];
-    const filaActiva = p.tipo === "L" ? p.fila : p.columna; // fila de L usada
-    const colActiva = p.tipo === "U" ? p.columna : p.fila;  // columna de U usada
+    const filaActiva = p.fila;   // fila de L que se está multiplicando
+    const colActiva = p.columna; // columna de U que se está multiplicando
     const nombre =
       p.tipo === "L"
         ? `L (fila ${p.fila + 1}, col ${p.columna + 1})`
